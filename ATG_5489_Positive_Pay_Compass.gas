@@ -1,0 +1,385 @@
+Program.Sub.ScreenSU.Start
+gui.fDate..create
+gui.fDate..caption("Positive Pay Selection")
+gui.fDate..size(4440,3360)
+gui.fDate..position(0,0)
+gui.fDate..event(unload,fdate_unload)
+gui.fDate..alwaysontop(False)
+gui.fDate..fontname("Arial")
+gui.fDate..fontsize(8)
+gui.fDate..forecolor(0)
+gui.fDate..fontstyle(,,,,)
+gui.fDate..BackColor(-2147483633)
+gui.fDate..controlbox(True)
+gui.fDate..maxbutton(False)
+gui.fDate..minbutton(True)
+gui.fDate..mousepointer(0)
+gui.fDate..moveable(True)
+gui.fDate..sizeable(False)
+gui.fDate..ShowInTaskBar(True)
+gui.fDate..titlebar(True)
+gui.fDate.dtpBDate.create(datepicker)
+gui.fDate.dtpBDate.visible(True)
+gui.fDate.dtpBDate.size(1935,285)
+gui.fDate.dtpBDate.zorder(0)
+gui.fDate.dtpBDate.position(105,430)
+gui.fDate.dtpBDate.enabled(True)
+gui.fDate.dtpBDate.checkbox(False)
+gui.fDate.dtpEDate.create(datepicker)
+gui.fDate.dtpEDate.visible(True)
+gui.fDate.dtpEDate.size(1935,285)
+gui.fDate.dtpEDate.zorder(0)
+gui.fDate.dtpEDate.position(2220,455)
+gui.fDate.dtpEDate.enabled(True)
+gui.fDate.dtpEDate.checkbox(False)
+gui.fDate.lblBDate.create(label,"Beginning Date",True,1155,255,1,110,200,True,0,Arial,8,-2147483633,0)
+gui.fDate.lblEDate.create(label,"Ending Date",True,930,255,1,2230,200,True,0,Arial,8,-2147483633,0)
+gui.fDate.cmdOk.create(button)
+gui.fDate.cmdOk.caption("Ok")
+gui.fDate.cmdOk.visible(True)
+gui.fDate.cmdOk.size(1125,375)
+gui.fDate.cmdOk.zorder(0)
+gui.fDate.cmdOk.position(130,2265)
+gui.fDate.cmdOk.enabled(True)
+gui.fDate.cmdOk.fontname("Arial")
+gui.fDate.cmdOk.fontsize(8)
+gui.fDate.cmdOk.event(click,cmdok_click)
+gui.fDate.optAP.create(option)
+gui.fDate.optAP.caption("AP")
+gui.fDate.optAP.visible(True)
+gui.fDate.optAP.size(1575,255)
+gui.fDate.optAP.zorder(0)
+gui.fDate.optAP.position(100,1580)
+gui.fDate.optAP.enabled(True)
+gui.fDate.optAP.alignment(0)
+gui.fDate.optAP.fontname("Arial")
+gui.fDate.optAP.fontsize(8)
+gui.fDate.optPay.create(option)
+gui.fDate.optPay.caption("Payroll")
+gui.fDate.optPay.visible(True)
+gui.fDate.optPay.size(1575,255)
+gui.fDate.optPay.zorder(0)
+gui.fDate.optPay.position(100,1805)
+gui.fDate.optPay.enabled(True)
+gui.fDate.optPay.alignment(0)
+gui.fDate.optPay.fontname("Arial")
+gui.fDate.optPay.fontsize(8)
+gui.fDate.lblAcct.create(label,"Select Account Number",True,1785,255,1,100,845,True,0,Arial,8,-2147483633,0)
+gui.fDate.ddlAcct.create(dropdownlist)
+gui.fDate.ddlAcct.visible(True)
+gui.fDate.ddlAcct.size(2115,330)
+gui.fDate.ddlAcct.zorder(0)
+gui.fDate.ddlAcct.position(100,1100)
+gui.fDate.ddlAcct.enabled(True)
+gui.fDate.ddlAcct.fontname("Arial")
+gui.fDate.ddlAcct.fontsize(8)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.Export.Define("RecType",String)
+Variable.UDT.Export.Define("AcctNum",String)
+Variable.UDT.Export.Define("Date",Date)
+Variable.UDT.Export.Define("ChkSerial",String)
+Variable.UDT.Export.Define("ChkAmt",Float)
+Variable.UDT.Export.Define("AddInfo",String)
+Variable.UDT.Export.Define("Payee",String)
+Variable.uGlobal.uExport.Declare("Export")
+Variable.UDT.AcctTot.Define("RecType",String)
+Variable.UDT.AcctTot.Define("AcctNum",String)
+Variable.UDT.AcctTot.Define("Date",Date)
+Variable.UDT.AcctTot.Define("RecCount",Long)
+Variable.UDT.AcctTot.Define("TotAmt",Float)
+Variable.uGlobal.uAcctTot.Declare("AcctTot")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.ODBC.Connection!conP.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+Gui.fDate..Show
+Gui.fDate.optAP.Value(1)
+F.Intrinsic.Control.CallSub(Acct)
+
+Program.Sub.Main.End
+
+program.sub.fdate_unload.start
+f.Intrinsic.Control.End
+
+program.sub.fdate_unload.end
+
+program.sub.cmdok_click.start
+V.uGlobal.uAcctTot.Redim(-1,-1)
+V.uGlobal.uExport.Redim(-1,-1)
+
+Gui.fDate..Visible(0)
+F.Intrinsic.Control.If(V.Screen.fDate!optAP.Value,=,"True")
+	F.Intrinsic.Control.CallSub(Chklog)
+	F.Intrinsic.Control.CallSub(Writerec)
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.CallSub(Chkpay)
+	F.Intrinsic.Control.CallSub(Writerec)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Debug.SetLA("Checked to see if AP or Payroll option was selected")
+F.ODBC.Connection!conP.Close
+F.Intrinsic.Control.CallSub(Fdate_unload)
+
+program.sub.cmdok_click.end
+
+Program.Sub.ChkLog.Start
+Variable.Local.sError.Declare(String)
+Variable.Local.sSql.Declare(String)
+V.Local.dBDate.Declare(Date)
+V.Local.dEDate.Declare(Date)
+V.Local.i.Declare(Long)
+V.Local.sAcct.Declare(String)
+
+Function.Intrinsic.Control.SetErrorHandler("ChkLog_Err")
+Function.Intrinsic.Control.ClearErrors
+
+V.Local.sAcct.Set(V.Screen.fDate!ddlAcct.Text)
+V.Local.dBDate.Set(V.Screen.fDate!dtpBDate.Value)
+V.Local.dEDate.Set(V.Screen.fDate!dtpEDate.Value)
+F.Intrinsic.String.Concat("Select CK_DATE, CK_NO, CK_OR_VOID, ACCT_NO, PAYEE, AMOUNT from V_CHECKS_LOG where CK_OR_VOID = 'C' and CK_DATE between '",V.Local.dBDate.PervasiveDate,"' and '",V.Local.dEDate.PervasiveDate,"' and LTRIM(RTRIM(ACCT_NO)) = '",V.Local.sAcct.Trim,"' order by CK_DATE",V.Local.sSql)
+F.ODBC.Connection!conP.OpenRecordsetRO("rstC",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!rstC.EOF,=,"True")
+	F.Intrinsic.Control.If(V.uGlobal.uExport.UBound,=,-1)
+		V.uGlobal.uExport.Redim(0,0)
+		V.uGlobal.uExport!AcctNum.Set(V.ODBC.conP!rstC.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport!ChkAmt.Set(V.ODBC.conP!rstC.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport!ChkSerial.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport!Date.Set(V.ODBC.conP!rstC.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+		V.uGlobal.uExport!RecType.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_OR_VOID)
+	F.Intrinsic.Control.Else
+		V.Local.i.Set(V.uGlobal.uExport.UBound)
+		F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+		V.uGlobal.uExport.RedimPreserve(V.uGlobal.uExport.LBound,V.Local.i)
+		V.uGlobal.uExport(v.Local.i)!AcctNum.Set(V.ODBC.conP!rstC.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport(v.Local.i)!ChkAmt.Set(V.ODBC.conP!rstC.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport(v.Local.i)!ChkSerial.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport(v.Local.i)!Date.Set(V.ODBC.conP!rstC.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport(v.Local.i)!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+		V.uGlobal.uExport(v.Local.i)!RecType.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_OR_VOID)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conP!rstC.MoveNext
+F.Intrinsic.Control.Loop
+F.Intrinsic.Debug.SetLA("Gathered checks from CHECKS_LOG")
+
+F.Intrinsic.String.Concat("Select CK_DATE, CK_NO, CK_OR_VOID, ACCT_NO, PAYEE, AMOUNT from V_CHECKS_LOG where CK_OR_VOID = 'V' and CK_DATE between '",V.Local.dBDate.PervasiveDate,"' and '",V.Local.dEDate.PervasiveDate,"' and LTRIM(RTRIM(ACCT_NO)) = '",V.Local.sAcct.Trim,"' order by CK_DATE",V.Local.sSql)
+F.ODBC.Connection!conP.OpenRecordsetRO("rstV",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!rstV.EOF,=,"True")
+	F.Intrinsic.Control.If(V.uGlobal.uExport.UBound,=,-1)
+		V.uGlobal.uExport.Redim(0,0)
+		V.uGlobal.uExport!AcctNum.Set(V.ODBC.conP!rstV.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport!ChkAmt.Set(V.ODBC.conP!rstV.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport!ChkSerial.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport!Date.Set(V.ODBC.conP!rstV.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport!RecType.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_OR_VOID)
+		V.uGlobal.uExport!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+	F.Intrinsic.Control.Else
+		V.Local.i.Set(V.uGlobal.uExport.UBound)
+		F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+		V.uGlobal.uExport.RedimPreserve(V.uGlobal.uExport.LBound,V.Local.i)
+		V.uGlobal.uExport(v.Local.i)!AcctNum.Set(V.ODBC.conP!rstV.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport(v.Local.i)!ChkAmt.Set(V.ODBC.conP!rstV.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport(v.Local.i)!ChkSerial.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport(v.Local.i)!Date.Set(V.ODBC.conP!rstV.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport(v.Local.i)!RecType.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_OR_VOID)
+		V.uGlobal.uExport(v.Local.i)!Payee.Set(V.ODBC.conP!rstV.FieldValLTrim!PAYEE)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conP!rstV.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.conP!rstC.Close
+F.ODBC.conP!rstV.Close
+F.Intrinsic.Debug.SetLA("Gathered voids from CHECKS_LOG")
+
+Function.Intrinsic.Control.ExitSub
+
+Function.Intrinsic.Control.Label("ChkLog_Err")
+Function.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.ChkLog.End
+
+Program.Sub.ChkPay.Start
+Variable.Local.sError.Declare(String)
+Variable.Local.sSql.Declare(String)
+V.Local.dBDate.Declare(Date)
+V.Local.dEDate.Declare(Date)
+V.Local.i.Declare(Long)
+V.Local.sAcct.Declare(String)
+
+Function.Intrinsic.Control.SetErrorHandler("ChkPay_Err")
+Function.Intrinsic.Control.ClearErrors
+
+V.Local.sAcct.Set(V.Screen.fDate!ddlAcct.Text)
+V.Local.dBDate.Set(V.Screen.fDate!dtpBDate.Value)
+V.Local.dEDate.Set(V.Screen.fDate!dtpEDate.Value)
+F.Intrinsic.String.Concat("Select CK_DATE, CK_NO, CK_OR_VOID, ACCT_NO, PAYEE, AMOUNT from V_PAYROLL_CHECKS where CK_OR_VOID = 'C' and CK_DATE between '",V.Local.dBDate.PervasiveDate,"' and '",V.Local.dEDate.PervasiveDate,"' and LTRIM(RTRIM(ACCT_NO)) = '",V.Local.sAcct.Trim,"' order by CK_DATE",V.Local.sSql)
+F.ODBC.Connection!conP.OpenRecordsetRO("rstC",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!rstC.EOF,=,"True")
+	F.Intrinsic.Control.If(V.uGlobal.uExport.UBound,=,-1)
+		V.uGlobal.uExport.Redim(0,0)
+		V.uGlobal.uExport!AcctNum.Set(V.ODBC.conP!rstC.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport!ChkAmt.Set(V.ODBC.conP!rstC.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport!ChkSerial.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport!Date.Set(V.ODBC.conP!rstC.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+		V.uGlobal.uExport!RecType.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_OR_VOID)
+	F.Intrinsic.Control.Else
+		V.Local.i.Set(V.uGlobal.uExport.UBound)
+		F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+		V.uGlobal.uExport.RedimPreserve(V.uGlobal.uExport.LBound,V.Local.i)
+		V.uGlobal.uExport(v.Local.i)!AcctNum.Set(V.ODBC.conP!rstC.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport(v.Local.i)!ChkAmt.Set(V.ODBC.conP!rstC.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport(v.Local.i)!ChkSerial.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport(v.Local.i)!Date.Set(V.ODBC.conP!rstC.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport(v.Local.i)!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+		V.uGlobal.uExport(v.Local.i)!RecType.Set(V.ODBC.conP!rstC.FieldValLTrim!CK_OR_VOID)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conP!rstC.MoveNext
+F.Intrinsic.Control.Loop
+F.Intrinsic.Debug.SetLA("Gathered checks from PAYROLL_CHECKS")
+
+F.Intrinsic.String.Concat("Select CK_DATE, CK_NO, CK_OR_VOID, ACCT_NO, PAYEE, AMOUNT from V_PAYROLL_CHECKS where CK_OR_VOID = 'V' and CK_DATE between '",V.Local.dBDate.PervasiveDate,"' and '",V.Local.dEDate.PervasiveDate,"' and LTRIM(RTRIM(ACCT_NO))= '",V.Local.sAcct.Trim,"' order by CK_DATE",V.Local.sSql)
+F.ODBC.Connection!conP.OpenRecordsetRO("rstC",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!rstV.EOF,=,"True")
+	F.Intrinsic.Control.If(V.uGlobal.uExport.UBound,=,-1)
+		V.uGlobal.uExport.Redim(0,0)
+		V.uGlobal.uExport!AcctNum.Set(V.ODBC.conP!rstV.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport!ChkAmt.Set(V.ODBC.conP!rstV.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport!ChkSerial.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport!Date.Set(V.ODBC.conP!rstV.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport!RecType.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_OR_VOID)
+		V.uGlobal.uExport!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+	F.Intrinsic.Control.Else
+		V.Local.i.Set(V.uGlobal.uExport.UBound)
+		F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+		V.uGlobal.uExport.RedimPreserve(V.uGlobal.uExport.LBound,V.Local.i)
+		V.uGlobal.uExport(v.Local.i)!AcctNum.Set(V.ODBC.conP!rstV.FieldValLTrim!ACCT_NO)
+		V.uGlobal.uExport(v.Local.i)!ChkAmt.Set(V.ODBC.conP!rstV.FieldValFloat!AMOUNT)
+		V.uGlobal.uExport(v.Local.i)!ChkSerial.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_NO)
+		V.uGlobal.uExport(v.Local.i)!Date.Set(V.ODBC.conP!rstV.FieldValPervasiveDate!CK_DATE)
+		V.uGlobal.uExport(v.Local.i)!RecType.Set(V.ODBC.conP!rstV.FieldValLTrim!CK_OR_VOID)
+		V.uGlobal.uExport(v.Local.i)!Payee.Set(V.ODBC.conP!rstC.FieldValLTrim!PAYEE)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conP!rstV.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.conP!rstC.Close
+F.ODBC.conP!rstV.Close
+F.Intrinsic.Debug.SetLA("GatheredvoidsfromPAYROLL_CHECKS")
+
+Function.Intrinsic.Control.ExitSub
+
+Function.Intrinsic.Control.Label("ChkPay_Err")
+Function.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.ChkPay.End
+
+Program.Sub.WriteRec.Start
+Variable.Local.sError.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sFRet.Declare(String)
+V.Local.iHndl.Declare(Long)
+V.Local.sRec.Declare(String)
+V.Local.sFDate.Declare(String)
+V.Local.sChkSer.Declare(String)
+V.Local.sChkAmt.Declare(String)
+V.Local.sPayee.Declare(String)
+V.Local.sAcctNum.Declare(String)
+V.Local.sWrite.Declare(String)
+
+Function.Intrinsic.Control.SetErrorHandler("WriteRec_Err")
+Function.Intrinsic.Control.ClearErrors
+
+F.Intrinsic.UI.ShowSaveFileDialog("","csv|*.csv",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,=,"***CANCEL***")
+	F.Intrinsic.Control.CallSub(Fdate_unload)
+F.Intrinsic.Control.Else
+	F.Intrinsic.File.GetHandle(V.Local.iHndl)
+	F.Intrinsic.File.GetFileList(V.Local.sRet,V.Local.sFRet)
+	F.Intrinsic.Control.If(V.Local.sFRet,=,"")
+		F.Intrinsic.File.OpenForAppend(V.Local.sRet,V.Local.iHndl)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.File.DeleteFile(V.Local.sRet)
+		F.Intrinsic.File.OpenForAppend(V.Local.sRet,V.Local.iHndl)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.For(V.Local.i,V.uGlobal.uExport.LBound,V.uGlobal.uExport.UBound,1)
+		F.Intrinsic.Control.If(V.uGlobal.uExport(v.Local.i)!RecType,=,"C")
+			V.Local.sRec.Set("I")
+		F.Intrinsic.Control.Else
+			V.Local.sRec.Set(V.uGlobal.uExport(v.Local.i)!RecType)
+		F.Intrinsic.Control.EndIf
+		V.Local.sFDate.Set(V.uGlobal.uExport(v.Local.i)!Date.String)
+		F.Intrinsic.String.Format(V.Local.sFDate,"MMDDYYYY",V.Local.sFDate)
+		V.Local.sChkSer.Set(V.uGlobal.uExport(v.Local.i)!ChkSerial)
+		V.Local.sChkAmt.Set(V.uGlobal.uExport(v.Local.i)!ChkAmt.Float)
+		F.Intrinsic.Control.If(V.Local.sChkAmt,<,0)
+			F.Intrinsic.Math.Mult(V.Local.sChkAmt,-1,V.Local.sChkAmt)
+		F.Intrinsic.Control.Else
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Format(V.Local.sChkAmt,"#.00",V.Local.sChkAmt)
+		V.Local.sAcctNum.Set(V.uGlobal.uExport(v.Local.i)!AcctNum)
+		V.Local.sPayee.Set(V.uGlobal.uExport(v.Local.i)!Payee)
+		F.Intrinsic.String.Concat(V.Local.sAcctNum.Trim,",",V.Local.sChkSer.Trim,",",V.Local.sChkAmt.Trim,",",V.Local.sFDate.Trim,",",V.Local.sRec.Trim,",",V.Local.sPayee.Trim,V.Local.sWrite)
+		F.Intrinsic.File.WriteLine(V.Local.iHndl,V.Local.sWrite)
+	F.Intrinsic.Control.Next(V.Local.i)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.File.CloseFile(V.Local.iHndl)
+F.Intrinsic.Debug.SetLA("Created export file")
+
+Function.Intrinsic.Control.ExitSub
+
+Function.Intrinsic.Control.Label("WriteRec_Err")
+Function.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.WriteRec.End
+
+Program.Sub.Acct.Start
+V.Local.sError.Declare(String)
+V.Local.sSql.Declare(String)
+V.Local.dBDate.Declare(Date)
+V.Local.dEDate.Declare(Date)
+V.Local.i.Declare(Long)
+
+Function.Intrinsic.Control.SetErrorHandler("Sub_Err")
+Function.Intrinsic.Control.ClearErrors
+
+V.Local.sSql.Set("Select DISTINCT LTRIM(RTRIM(ACCT_NO)) AS ACCT_NO from V_CHECKS_LOG")
+F.ODBC.Connection!conP.OpenRecordsetRO("RST",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!RST.EOF,=,"True")
+	F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+	Gui.fDate.ddlAcct.AddItem(V.ODBC.conP!RST.FieldValLTrim!ACCT_NO,V.Local.i)
+	F.ODBC.conP!RST.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.conP!RST.Close
+V.Local.sSql.Set("Select DISTINCT LTRIM(RTRIM(ACCT_NO)) AS ACCT_NO from V_PAYROLL_CHECKS")
+F.ODBC.Connection!conP.OpenRecordsetRO("RST",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.conP!RST.EOF,=,"True")
+	F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+	Gui.fDate.ddlAcct.AddItem(V.ODBC.conP!RST.FieldValLTrim!ACCT_NO,V.Local.i)
+	F.ODBC.conP!RST.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.conP!RST.Close
+
+Function.Intrinsic.Control.ExitSub
+
+Function.Intrinsic.Control.Label("Sub_Err")
+Function.Intrinsic.Control.If(Variable.Ambient.ErrorNumber,"<>",0)
+	Function.Intrinsic.String.Concat("Error Occurred ",Variable.Ambient.ErrorNumber," with description ",Variable.Ambient.ErrorDescription,Variable.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+
+Program.Sub.Acct.End
+
+
